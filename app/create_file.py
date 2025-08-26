@@ -1,17 +1,21 @@
 import sys
 import os
 from datetime import datetime
+from typing import List, Optional
 
 
 def main() -> None:
-    args = sys.argv[1:]
+    args: List[str] = sys.argv[1:]
 
     if not args:
-        print("Usage: python create_file.py [-d dir1 dir2 ...] [-f filename]")
+        print(
+            "Usage: python create_file.py "
+            "[-d dir1 dir2 ...] [-f filename]"
+        )
         sys.exit(1)
 
-    dir_parts = []
-    filename = None
+    dir_parts: List[str] = []
+    filename: Optional[str] = None
 
     i = 0
     while i < len(args):
@@ -36,29 +40,35 @@ def main() -> None:
     target_dir = os.path.join(*dir_parts) if dir_parts else "."
     os.makedirs(target_dir, exist_ok=True)
 
-    # --- Obsługa tylko katalogu bez pliku ---
-    if not filename:
-        print(f"Directory created: {os.path.abspath(target_dir)}")
+    # --- Tylko katalog, bez pliku ---
+    if filename is None:
+        abs_dir = os.path.abspath(target_dir)
+        print(f"Directory created: {abs_dir}")
         return
 
     # --- Tworzenie pliku z zawartością ---
     filepath = os.path.join(target_dir, filename)
 
     print("Enter content line (type 'stop' to finish):")
-    lines = []
+    lines: List[str] = []
     while True:
         line = input("Enter content line: ")
-        if line.strip().lower() == "stop":
+        # Dokładne, case-sensitive dopasowanie bez strip/lower
+        if line == "stop":
             break
         lines.append(line)
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    file_exists = os.path.exists(filepath)
 
-    with open(filepath, "a", encoding="utf-8") as f:
-        f.write(f"{timestamp}\n")
-        for idx, line in enumerate(lines, start=1):
-            f.write(f"{idx} {line}\n")
-        f.write("\n")
+    with open(filepath, "a", encoding="utf-8") as file_handle:
+        # Pusta linia tylko jeśli plik już istniał (nowy blok)
+        if file_exists:
+            file_handle.write("\n")
+
+        file_handle.write(f"{timestamp}\n")
+        for idx, content_line in enumerate(lines, start=1):
+            file_handle.write(f"{idx} {content_line}\n")
 
     print(f"File created/updated: {os.path.abspath(filepath)}")
 
